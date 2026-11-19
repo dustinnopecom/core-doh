@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Core-doh">
+<meta name="theme-color" content="#0b0b10">
+<meta name="description" content="Core-doh — Dustin's personal, localized creative and everyday AI assistant.">
+<title>Core-doh</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%230b0b10'/%3E%3Ccircle cx='372' cy='118' r='62' fill='%23c9a25e'/%3E%3Ccircle cx='348' cy='102' r='54' fill='%230b0b10'/%3E%3Cpath d='M118 352 L150 178 L206 238 L268 142 L312 232 L372 196 L358 352 Q300 430 238 430 Q160 430 118 352Z' fill='%2338d6e8'/%3E%3Ccircle cx='252' cy='262' r='14' fill='%230b0b10'/%3E%3Ctext x='256' y='486' font-family='Arial,sans-serif' font-size='52' font-weight='900' text-anchor='middle' fill='%23b42318'%3EC%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+<style>
+:root{--bg:#0b0b10;--bg2:#121218;--panel:#17171f;--panel2:#1e1e28;--line:#2c2c38;--text:#f2ede6;--muted:#a8a29a;--gold:#c9a25e;--gold2:#e8c87e;--crimson:#b42318;--crimson2:#d93a2e;--cyan:#38d6e8;--green:#4ade80;--radius:18px}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+body{font-size:17px;line-height:1.5;overflow:hidden}
+button,input,textarea,select{font:inherit;color:inherit}
+button{min-height:44px;min-width:44px;cursor:pointer}
+a{color:var(--cyan)}
+.app{display:flex;flex-direction:column;height:100dvh;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}
+header.topbar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg2);border-bottom:1px solid var(--line);flex-shrink:0}
+.icon-btn{border:1px solid var(--line);background:var(--panel);border-radius:12px;padding:6px 10px;font-size:20px;line-height:1}
+.icon-btn:active{transform:scale(.97)}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.brand svg{width:44px;height:44px;flex-shrink:0;border-radius:12px;box-shadow:0 0 0 1px var(--line),0 4px 18px rgba(0,0,0,.5)}
+.brand h1{font-size:20px;line-height:1.05;margin:0;letter-spacing:.02em;white-space:nowrap}
+.brand h1 span{color:var(--gold)}
+.brand small{display:block;font-size:12.5px;color:var(--muted);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--gold);margin-right:5px;vertical-align:middle}
+.status-dot.ready{background:var(--green);box-shadow:0 0 8px var(--green)}
+.status-dot.busy{background:var(--gold);animation:pulse 1s infinite}
+.status-dot.err{background:var(--crimson2)}
+@keyframes pulse{50%{opacity:.4}}
+.new-btn{border:1px solid var(--gold);background:var(--gold);color:#14100a;border-radius:999px;padding:0 16px;font-weight:700;white-space:nowrap}
+.main{flex:1;display:flex;min-height:0;position:relative}
+.drawer{width:320px;max-width:86vw;background:var(--panel);border-right:1px solid var(--line);display:flex;flex-direction:column;flex-shrink:0;z-index:30}
+.drawer h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:18px 16px 8px}
+.workflows{padding:0 12px;display:grid;gap:8px}
+.wf{display:flex;align-items:center;gap:11px;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--text)}
+.wf b{display:block;font-size:15.5px;line-height:1.25}
+.wf span{display:block;font-size:12.5px;color:var(--muted);line-height:1.35}
+.wf .em{font-size:22px;flex-shrink:0}
+.wf.active{border-color:var(--gold);box-shadow:inset 0 0 0 1px var(--gold)}
+.history{flex:1;overflow-y:auto;padding:0 12px 16px;-webkit-overflow-scrolling:touch}
+.hist-item{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:12px;padding:11px 10px;color:var(--text)}
+.hist-item:hover,.hist-item.active{background:var(--panel2);border-color:var(--line)}
+.hist-item .t{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+.hist-item .d{font-size:11px;color:var(--muted);white-space:nowrap}
+.hist-item .del{border:none;background:transparent;color:var(--muted);font-size:18px;min-width:32px;min-height:32px;padding:0}
+.empty-note{color:var(--muted);font-size:14px;padding:4px 10px}
+.scrim{display:none;position:absolute;inset:0;background:rgba(0,0,0,.55);z-index:20}
+.chat{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+.mode-bar{display:flex;align-items:center;gap:8px;padding:9px 14px;border-bottom:1px solid var(--line);background:var(--bg2);font-size:14px;color:var(--muted);flex-shrink:0;overflow-x:auto}
+.mode-bar b{color:var(--gold2);white-space:nowrap}
+.mode-bar .pill{white-space:nowrap;border:1px solid var(--line);border-radius:999px;padding:4px 10px;background:var(--panel)}
+#messages{flex:1;overflow-y:auto;padding:18px 14px 10px;display:flex;flex-direction:column;gap:14px;-webkit-overflow-scrolling:touch;scroll-behavior:smooth}
+.msg{max-width:860px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:6px}
+.msg .who{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.msg.user{align-items:flex-end}
+.msg.user .who{color:var(--gold)}
+.bubble{padding:13px 15px;border-radius:var(--radius);font-size:16.5px;line-height:1.6;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.msg.user .bubble{background:#2a2113;border:1px solid #4a3a1e;border-bottom-right-radius:6px;max-width:92%}
+.msg.ai .bubble{background:var(--panel);border:1px solid var(--line);border-bottom-left-radius:6px}
+.msg.ai .bubble p{margin:0 0 10px}
+.msg.ai .bubble p:last-child{margin-bottom:0}
+.msg.ai .bubble strong{color:var(--gold2)}
+.msg.ai .bubble em{color:var(--cyan)}
+.msg.ai .bubble code{background:#0f0f14;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:14.5px}
+.msg.ai .bubble pre{background:#0f0f14;border:1px solid var(--line);border-radius:10px;padding:12px;overflow-x:auto;font-size:14.5px}
+.msg.ai .bubble pre code{border:none;padding:0;background:transparent}
+.msg.ai .bubble ul,.msg.ai .bubble ol{margin:6px 0 10px;padding-left:22px}
+.msg.ai .bubble li{margin:4px 0}
+.msg.ai .bubble h3{margin:10px 0 6px;font-size:16.5px;color:var(--gold2)}
+.msg-actions{display:flex;gap:6px}
+.copy-btn,.speak-btn{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:5px 12px;font-size:13px;color:var(--muted);min-height:34px}
+.copy-btn:active{background:var(--gold);color:#14100a;border-color:var(--gold)}
+.typing{display:inline-flex;gap:5px;padding:14px 16px}
+.typing i{width:8px;height:8px;border-radius:50%;background:var(--gold);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.18s}.typing i:nth-child(3){animation-delay:.36s}
+@keyframes blink{50%{opacity:.25}}
+.composer{padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:var(--bg2);border-top:1px solid var(--line);flex-shrink:0}
+.composer-inner{max-width:860px;margin:0 auto;display:flex;gap:8px;align-items:flex-end}
+#input{flex:1;min-height:52px;max-height:180px;resize:none;background:#0f0f14;border:1px solid var(--line);border-radius:16px;padding:14px 15px;font-size:17px;line-height:1.45;color:var(--text);outline:none}
+#input:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,162,94,.18)}
+#input::placeholder{color:#77716a}
+#sendBtn{width:56px;height:52px;border-radius:16px;border:none;background:var(--crimson);color:#fff;font-size:22px;flex-shrink:0}
+#sendBtn:disabled{opacity:.45}
+.hint{text-align:center;color:var(--muted);font-size:12.5px;margin:7px 0 0}
+.scratch{flex:1;display:none;flex-direction:column;min-width:0;background:var(--bg);padding:16px}
+.scratch.show{display:flex}
+.scratch h2{margin:2px 0 4px;font-size:20px}
+.scratch p{color:var(--muted);margin:0 0 12px;font-size:14.5px}
+#scratchText{flex:1;width:100%;max-width:860px;margin:0 auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;font-size:17px;line-height:1.6;color:var(--text);resize:none;outline:none}
+#scratchText:focus{border-color:var(--gold)}
+.scratch-bar{max-width:860px;width:100%;margin:10px auto 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.scratch-bar span{color:var(--muted);font-size:13px;flex:1}
+.btn2{border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:0 16px}
+.btn2.danger{border-color:var(--crimson);color:#ffb3ac}
+.modal-back{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:flex-end;justify-content:center;z-index:60}
+.modal-back.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:640px;max-height:92dvh;overflow-y:auto;padding:20px 18px calc(20px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.modal h2{margin:0 0 4px;font-size:21px}
+.modal .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;background:#0f0f14;border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:16px;color:var(--text);outline:none}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold)}
+.field small{display:block;color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.45}
+.field textarea{ min-height:150px;resize:vertical;line-height:1.55}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row .field{flex:1;min-width:140px}
+.switch-row{display:flex;align-items:center;gap:12px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:14px}
+.switch-row b{display:block;font-size:15.5px}
+.switch-row span{font-size:13px;color:var(--muted);line-height:1.4}
+.switch{margin-left:auto;width:56px;height:32px;border-radius:999px;border:1px solid var(--line);background:#0f0f14;position:relative;flex-shrink:0;padding:0}
+.switch::after{content:"";position:absolute;top:3px;left:4px;width:24px;height:24px;border-radius:50%;background:#777;transition:left .18s,background .18s}
+.switch[aria-checked="true"]{background:var(--gold);border-color:var(--gold)}
+.switch[aria-checked="true"]::after{left:26px;background:#14100a}
+.modal-actions{display:flex;gap:8px;margin-top:6px}
+.primary{flex:1;border:none;background:var(--gold);color:#14100a;border-radius:999px;padding:0 18px;font-weight:800}
+.ghost{border:1px solid var(--line);background:var(--panel2);border-radius:999px;padding:0 16px}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--gold);color:#14100a;font-weight:700;border-radius:999px;padding:11px 18px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:80;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media (max-width:900px){
+  .drawer{position:absolute;top:0;bottom:0;left:0;transform:translateX(-105%);transition:transform .22s ease;box-shadow:20px 0 50px rgba(0,0,0,.5)}
+  .drawer.open{transform:translateX(0)}
+  .scrim.show{display:block}
+  .brand small{display:none}
+  .new-btn{padding:0 12px}
+}
+@media (min-width:901px){
+  .modal-back{align-items:center;padding:20px}
+  .modal{border-radius:22px}
+  #menuBtn{display:none}
+}
+@media (min-width:1200px){
+  .msg{max-width:920px}
+  .composer-inner{max-width:920px}
+  body{font-size:17.5px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Open menu">☰</button>
+    <div class="brand">
+      <svg viewBox="0 0 512 512" role="img" aria-label="Core-doh icon — neon cyan wolf, gold crescent moon, crimson C" id="headerIcon"><rect width="512" height="512" rx="112" fill="#0b0b10"/><circle cx="372" cy="118" r="62" fill="#c9a25e"/><circle cx="348" cy="102" r="54" fill="#0b0b10"/><path d="M118 352 L150 178 L206 238 L268 142 L312 232 L372 196 L358 352 Q300 430 238 430 Q160 430 118 352Z" fill="#38d6e8"/><circle cx="252" cy="262" r="14" fill="#0b0b10"/><path d="M150 392 L362 392" stroke="#c9a25e" stroke-width="10" stroke-linecap="round"/><text x="256" y="486" font-family="Arial, sans-serif" font-size="52" font-weight="900" text-anchor="middle" fill="#b42318">C</text></svg>
+      <div><h1>Core-<span>doh</span></h1><small><span class="status-dot" id="statusDot"></span><span id="statusText">Offline demo — ready</span></small></div>
+    </div>
+    <button class="new-btn" id="newChatBtn">+ New chat</button>
+    <button class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+  </header>
+
+  <div class="main">
+    <div class="scrim" id="scrim"></div>
+    <aside class="drawer" id="drawer" aria-label="Conversations and workflows">
+      <h2>Quick launch</h2>
+      <div class="workflows">
+        <button class="wf" data-wf="verse"><span class="em">🎤</span><span><b>Verse &amp; Hook Lab</b><span>Southern outlaw storytelling rap brainstorming</span></span></button>
+        <button class="wf" data-wf="animation"><span class="em">🎬</span><span><b>Animation &amp; Script</b><span>Dustinnope Animation Studios / Nope Originals</span></span></button>
+        <button class="wf" data-wf="ops"><span class="em">🗂️</span><span><b>Nope Ops &amp; Web</b><span>Nope Entertainment planning &amp; dustinnope.com</span></span></button>
+        <button class="wf" data-wf="scratch"><span class="em">📝</span><span><b>Scratchpad</b><span>Quick persistent local notes for lyrics or ideas</span></span></button>
+      </div>
+      <h2>Saved conversations</h2>
+      <div class="history" id="historyList"></div>
+    </aside>
+
+    <section class="chat" id="chatView">
+      <div class="mode-bar"><b id="modeLabel">General</b><span class="pill" id="modePill">Core-doh is ready — type below, or pick a workflow on the left.</span><span class="pill" id="countPill"></span></div>
+      <div id="messages" aria-live="polite"></div>
+      <div class="composer">
+        <div class="composer-inner">
+          <textarea id="input" rows="1" placeholder="Talk to Core-doh… lyrics, a script beat, a plan, anything." aria-label="Message Core-doh"></textarea>
+          <button id="sendBtn" aria-label="Send message">➤</button>
+        </div>
+        <p class="hint">Saved on this device only. Nothing leaves the tablet unless you connect an API key in Settings.</p>
+      </div>
+    </section>
+
+    <section class="scratch" id="scratchView">
+      <h2>📝 Scratchpad</h2>
+      <p>Quick notes for lyrics or ideas. Saves automatically on this device — no account, no cloud.</p>
+      <textarea id="scratchText" placeholder="Drop a line, a hook, a title, a stray idea…&#10;&#10;It will still be here when you come back."></textarea>
+      <div class="scratch-bar"><span id="scratchSaved">Not saved yet</span><button class="btn2" id="copyScratchBtn">Copy notes</button><button class="btn2 danger" id="clearScratchBtn">Clear</button><button class="btn2" id="backToChatBtn">Back to chat →</button></div>
+    </section>
+  </div>
+</div>
+
+<div class="modal-back" id="settingsModal" role="dialog" aria-modal="true" aria-label="Settings">
+  <div class="modal">
+    <h2>Settings</h2>
+    <p class="sub">Your key stays in this browser only, in localStorage. Core-doh works in offline demo mode with no key at all.</p>
+    <div class="switch-row"><div><b>Offline / demo mode</b><span>On: Core-doh answers locally for testing and note-taking. Off: it calls your API below.</span></div><button class="switch" id="demoToggle" role="switch" aria-checked="true" aria-label="Offline demo mode"></button></div>
+    <div class="field"><label for="apiKey">API key</label><div style="display:flex;gap:8px"><input id="apiKey" type="password" placeholder="sk-…" autocomplete="off" style="flex:1"><button class="btn2" id="showKeyBtn" type="button">Show</button></div><small>OpenAI-compatible key. Paste it here, save, and it never leaves this device except in the API call itself.</small></div>
+    <div class="field"><label for="endpoint">API endpoint</label><input id="endpoint" type="url" value="https://api.openai.com/v1" autocomplete="off"><small>Base URL without a trailing <code>/chat/completions</code> — Core-doh adds that. For a local model, use its address, for example <code>http://192.168.1.20:1234/v1</code> or <code>http://localhost:11434/v1</code>.</small></div>
+    <div class="row">
+      <div class="field"><label for="model">Model</label><input id="model" type="text" value="gpt-4o-mini" autocomplete="off"></div>
+      <div class="field"><label for="temperature">Temperature</label><input id="temperature" type="number" min="0" max="2" step="0.1" value="0.8"></div>
+    </div>
+    <div class="field"><label for="systemPrompt">System prompt — sent with every request</label><textarea id="systemPrompt"></textarea><small>This is Core-doh's hardcoded persona. You can tweak the wording here, and Reset below restores the original.</small></div>
+    <div class="modal-actions"><button class="primary" id="saveSettingsBtn">Save settings</button><button class="ghost" id="resetPromptBtn" type="button">Reset prompt</button><button class="ghost" id="closeSettingsBtn" type="button">Close</button></div>
+    <div class="modal-actions" style="margin-top:10px"><button class="ghost" id="exportBtn" type="button">Export this chat</button><button class="ghost" id="clearAllBtn" type="button">Erase all chats &amp; notes</button></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+var ICON_FILE = "icon.png";
+var LS_CHATS = "coredoh.chats.v1";
+var LS_SETTINGS = "coredoh.settings.v1";
+var LS_SCRATCH = "coredoh.scratch.v1";
+var LS_CURRENT = "coredoh.current.v1";
+
+var DEFAULT_SYSTEM_PROMPT = "You are Core-doh, Dustin's personal, localized creative and everyday AI assistant.\n\nWho Dustin Is:\n- Artist & Creator: Makes music under Dustin and Dustinnope with a Southern outlaw storytelling rap style — gritty, vivid, narrative-driven, and authentic.\n- Multimedia Ecosystem: Runs Nope Entertainment, Dustinnope Animation Studios, Nope Originals, and dustinnope.com.\n- Household: Shares life at home with Hannah and Harley. Keep their context in mind naturally when helping with schedules, reminders, or everyday tasks.\n- Tech Setup: Primarily uses a REVVL TAB 2 5G tablet on the go/in the studio and an HP OmniBook X Flip for heavier production work.\n\nHow You Behave:\n- Talk like a sharp, loyal creative partner — direct, grounded, and natural. Never sound corporate, robotic, or overly formal.\n- When helping with lyrics, hooks, or storytelling, lean into vivid imagery, cadence, and Southern outlaw grit without clichés or corniness.\n- When helping with Dustinnope Animation Studios, Nope Originals, Nope Entertainment, or dustinnope.com, think practically about visuals, pacing, branding, and next steps.\n- Keep answers scannable and concise enough to read comfortably on a tablet screen unless Dustin asks for a deep dive.";
+
+var WORKFLOWS = {
+  verse: {label:"Verse & Hook Lab", pill:"Southern outlaw storytelling rap — hooks, verses, cadence, imagery.", starter:"Help me brainstorm a Southern outlaw storytelling rap. Give me 3 hook options first, then a 4-bar verse sketch — vivid, gritty, narrative-driven, no clichés. Here's my starting idea: "},
+  animation: {label:"Animation & Script", pill:"Dustinnope Animation Studios / Nope Originals — visuals, pacing, beats.", starter:"Help me build a Dustinnope Animation Studios / Nope Originals concept. Give me the logline, the visual style, and a scene-by-scene beat sheet for the opening 60 seconds. Here's the idea: "},
+  ops: {label:"Nope Ops & Web", pill:"Nope Entertainment planning & dustinnope.com updates.", starter:"Help me plan the next Nope Entertainment move for dustinnope.com. Give me a short, practical plan — what to build or update, in what order, and what done looks like. Here's where I'm at: "},
+  scratch: {label:"Scratchpad", pill:"Quick persistent local notes.", starter:""}
+};
+
+var settings = {apiKey:"", endpoint:"https://api.openai.com/v1", model:"gpt-4o-mini", temperature:0.8, demoMode:true, systemPrompt:DEFAULT_SYSTEM_PROMPT};
+var chats = [];
+var currentId = null;
+var currentMode = "verse";
+var busy = false;
+
+function $(id){ return document.getElementById(id); }
+function loadJSON(key, fallback){ try{ var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } }
+function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+function toast(msg){ var t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(function(){ t.classList.remove("show"); }, 2200); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function md(s){
+  var h = esc(s);
+  h = h.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  h = h.replace(/(^|\n)### (.+)/g, "$1<h3>$2</h3>");
+  h = h.replace(/(^|\n)- (.+)/g, "$1• $2");
+  h = h.replace(/\n/g, "<br>");
+  return h;
+}
+function uid(){ return "c" + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function nowLabel(ts){ var d=new Date(ts); var today=new Date(); var sameDay = d.toDateString()===today.toDateString(); if(sameDay){ return d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"}); } return d.toLocaleDateString([], {month:"short", day:"numeric"}); }
+
+function loadSettings(){
+  var s = loadJSON(LS_SETTINGS, null);
+  if(s){ settings = {apiKey:s.apiKey||"", endpoint:s.endpoint||"https://api.openai.com/v1", model:s.model||"gpt-4o-mini", temperature:(typeof s.temperature==="number"?s.temperature:0.8), demoMode:(s.demoMode!==false), systemPrompt:s.systemPrompt||DEFAULT_SYSTEM_PROMPT}; }
+}
+function saveSettings(){ saveJSON(LS_SETTINGS, settings); updateStatus(); }
+function loadChats(){
+  chats = loadJSON(LS_CHATS, []);
+  if(!Array.isArray(chats)) chats=[];
+  currentId = localStorage.getItem(LS_CURRENT) || null;
+  if(!currentId || !chats.some(function(c){return c.id===currentId;})){
+    if(chats.length){ currentId = chats[0].id; } else { currentId = createChat("General", true); }
+  }
+}
+function saveChats(){ saveJSON(LS_CHATS, chats); try{ localStorage.setItem(LS_CURRENT, currentId); }catch(e){} renderHistory(); }
+function currentChat(){ var c=null; chats.forEach(function(x){ if(x.id===currentId) c=x; }); return c; }
+function createChat(mode, silent){
+  var chat = {id:uid(), mode:mode||"general", title:"New chat", messages:[], createdAt:Date.now(), updatedAt:Date.now()};
+  chats.unshift(chat); currentId = chat.id; currentMode = chat.mode;
+  if(!silent) saveChats();
+  return chat.id;
+}
+function setMode(mode){
+  currentMode = mode;
+  var chat = currentChat(); if(chat){ chat.mode = mode; }
+  var wf = WORKFLOWS[mode];
+  if(wf){ $("modeLabel").textContent = wf.label; $("modePill").textContent = wf.pill; }
+  else { $("modeLabel").textContent = "General"; $("modePill").textContent = "Core-doh is ready — type below, or pick a workflow on the left."; }
+  document.querySelectorAll(".wf").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-wf")===mode); });
+  saveChats();
+}
+
+function renderHistory(){
+  var list = $("historyList"); list.innerHTML = "";
+  if(!chats.length){ var p=document.createElement("p"); p.className="empty-note"; p.textContent="No saved chats yet. Start typing and one will appear here."; list.appendChild(p); return; }
+  chats.forEach(function(c){
+    var b=document.createElement("button"); b.className="hist-item"+(c.id===currentId?" active":"");
+    var t=document.createElement("span"); t.className="t"; t.textContent=c.title||"New chat";
+    var d=document.createElement("span"); d.className="d"; d.textContent=nowLabel(c.updatedAt);
+    var del=document.createElement("span"); del.className="del"; del.textContent="×"; del.setAttribute("role","button"); del.setAttribute("aria-label","Delete chat");
+    del.addEventListener("click", function(ev){ ev.stopPropagation(); deleteChat(c.id); });
+    b.appendChild(t); b.appendChild(d); b.appendChild(del);
+    b.addEventListener("click", function(){ loadChat(c.id); });
+    list.appendChild(b);
+  });
+  var chat=currentChat();
+  $("countPill").textContent = chat ? chat.messages.length + " message" + (chat.messages.length===1?"":"s") : "";
+}
+function loadChat(id){
+  currentId=id; var c=currentChat(); if(c) setMode(c.mode||"general");
+  renderMessages(); renderHistory(); showChat(); closeDrawer();
+}
+function deleteChat(id){
+  if(!confirm("Delete this chat? This can't be undone.")) return;
+  chats = chats.filter(function(c){ return c.id!==id; });
+  if(currentId===id){ currentId = chats.length ? chats[0].id : createChat("general", true); }
+  saveChats(); renderMessages();
+}
+function renderMessages(){
+  var box=$("messages"); box.innerHTML="";
+  var chat=currentChat(); if(!chat) return;
+  if(!chat.messages.length){
+    var welcome = "Hey Dustin. Core-doh, right here — tablet or OmniBook, same wolf.\n\nPick a lane on the left, or just type. Verse & Hook Lab for bars, Animation & Script for Nope Originals, Nope Ops & Web for the business side, Scratchpad for the stray line you don't want to lose.\n\nI'm in offline demo mode right now, so I can brainstorm and take notes with no key. Drop a key in Settings when you want the full model.";
+    addMessageToDom("ai", welcome, true);
+    return;
+  }
+  chat.messages.forEach(function(m){ addMessageToDom(m.role==="user"?"user":"ai", m.content, true); });
+  box.scrollTop = box.scrollHeight;
+}
+function addMessageToDom(who, text, skipScroll){
+  var box=$("messages");
+  var wrap=document.createElement("div"); wrap.className="msg "+who;
+  var whoEl=document.createElement("div"); whoEl.className="who"; whoEl.textContent = who==="user" ? "Dustin" : "Core-doh";
+  var bub=document.createElement("div"); bub.className="bubble";
+  if(who==="ai"){ bub.innerHTML = md(text); } else { bub.textContent = text; }
+  var acts=document.createElement("div"); acts.className="msg-actions";
+  var copy=document.createElement("button"); copy.className="copy-btn"; copy.textContent="Copy";
+  copy.addEventListener("click", function(){ copyText(text).then(function(){ copy.textContent="Copied ✓"; setTimeout(function(){ copy.textContent="Copy"; }, 1500); }); });
+  acts.appendChild(copy);
+  if(who==="ai"){
+    var sp=document.createElement("button"); sp.className="speak-btn"; sp.textContent="🔊 Read aloud";
+    sp.addEventListener("click", function(){ speakText(text); });
+    acts.appendChild(sp);
+  }
+  wrap.appendChild(whoEl); wrap.appendChild(bub); wrap.appendChild(acts);
+  box.appendChild(wrap);
+  if(!skipScroll) box.scrollTop = box.scrollHeight;
+  return wrap;
+}
+function copyText(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){ return navigator.clipboard.writeText(text).catch(function(){ fallbackCopy(text); }); }
+  fallbackCopy(text); return Promise.resolve();
+}
+function fallbackCopy(text){
+  var ta=document.createElement("textarea"); ta.value=text; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }catch(e){}
+  document.body.removeChild(ta);
+}
+function speakText(text){
+  if(!("speechSynthesis" in window)){ toast("Speech isn't available in this browser"); return; }
+  window.speechSynthesis.cancel();
+  var clean = text.replace(/[*#]/g,"");
+  var u = new SpeechSynthesisUtterance(clean); u.rate=1; u.pitch=0.9;
+  window.speechSynthesis.speak(u);
+}
+function updateStatus(){
+  var dot=$("statusDot"), txt=$("statusText");
+  if(busy){ dot.className="status-dot busy"; txt.textContent="Thinking…"; return; }
+  if(settings.demoMode){ dot.className="status-dot"; txt.textContent="Offline demo — ready"; return; }
+  if(settings.apiKey){ dot.className="status-dot ready"; txt.textContent="Connected — ready"; return; }
+  dot.className="status-dot err"; txt.textContent="No API key — turn on demo mode or add a key";
+}
+function setBusy(b){ busy=b; $("sendBtn").disabled=b; updateStatus(); }
+
+function demoReply(userText, mode){
+  var t = userText.toLowerCase();
+  var seed = userText.trim().replace(/\s+/g," ").slice(0,80);
+  if(mode==="verse"){
+    return "**Verse & Hook Lab — offline demo**\n\nHere's a starting cut on: *" + seed + "*\n\n**Hooks — pick one, cut the rest:**\n- I came up out the mud with the wolves at my back\n- Every mile got a memory, every night got a name\n- I don't run from the dark, I just learned how to drive through it\n\n**4-bar sketch:**\nBayou rain on a broke-down road, headlights cuttin' through the smoke,\nMama's voice in the rearview, every word she ever spoke,\nI was raised on the hard side, where the river don't forgive,\nSo I write it like I lived it — that's the only way I live.\n\n**Next move:** tell me the story behind it — who, where, what went wrong — and I'll tighten the verse to that exact scene. This is demo mode, so it's a sketch, not the full model. Add a key in Settings for the full pass.";
+  }
+  if(mode==="animation"){
+    return "**Animation & Script — offline demo**\n\n**Logline:** " + seed + " — a Nope Originals short where the bayou talks back.\n\n**Visual style:** Dark Southern-gothic realism, high contrast, neon-amber rim light, deep shadows. Hand-drawn feel, cinematic framing — not cartoonish.\n\n**Opening 60 seconds:**\n- 0:00 — Wide bayou at dusk, fog low, one light on the water.\n- 0:15 — Our lead walks in from the treeline, no music yet, just footsteps and cicadas.\n- 0:30 — First line lands on a close-up. Hold it. Let the face do the work.\n- 0:45 — Cut wide as the world answers back. Title card: Dustinnope.\n\n**Next move:** give me the ending you want, and I'll beat out the middle scene by scene. Full model in Settings will take this further.";
+  }
+  if(mode==="ops"){
+    return "**Nope Ops & Web — offline demo**\n\n**For:** " + seed + "\n\n**Practical plan:**\n- **Today:** one clear next step, written down, no new tools.\n- **This week:** update dustinnope.com with the newest drop first, then the store link.\n- **Done looks like:** the page loads clean on the REVVL tablet, the link works, and a fan can find the music in two taps.\n\n**Watch-out:** don't add a new section before the current one is finished — ship the small thing, then build the next one.\n\nTell me which piece you want first — the site, the release, or the promo — and I'll lay out the exact order. Add an API key in Settings for the full planning pass.";
+  }
+  if(/hannah|harley|schedule|remind|tomorrow|today/.test(t)){
+    return "Got it — **" + seed + "**\n\nHere's the plain version: keep it to one time, one place, one person. Hannah and Harley's stuff goes on the family calendar, not in a chat thread you'll lose.\n\nTell me the date, the time, and who it's for, and I'll write it back as a clean reminder you can copy straight into the calendar. (Offline demo mode — I'm brainstorming locally, not booking anything.)";
+  }
+  if(/lyric|song|hook|verse|rap/.test(t)){
+    return "Here's a quick cut on **" + seed + "**:\n\n*Swamp water risin', headlights in the haze —*\n*I been runnin' from the past, but the past knows all my ways.*\n\nThat's the demo sketch. Give me the story — who hurt who, where it happened, what it cost — and I'll build the full verse around it. For the real model, add your key in Settings.";
+  }
+  return "Got it — **" + seed + "**\n\nStraight answer, demo mode: that's a solid starting point. Break it into the smallest next step you can do in 15 minutes, do that one thing, then come back and tell me what happened.\n\nIf you want the full Core-doh brain on this — lyrics, script, or a real plan — add your API key in Settings and turn demo mode off. Otherwise, keep talking, I'm here.";
+}
+
+function callApi(messages){
+  var url = settings.endpoint.replace(/\/+$/,"") + "/chat/completions";
+  return fetch(url, {
+    method:"POST",
+    headers:{"Content-Type":"application/json", "Authorization":"Bearer " + settings.apiKey},
+    body: JSON.stringify({model:settings.model, temperature:settings.temperature, messages:messages})
+  }).then(function(res){
+    if(!res.ok){ return res.text().then(function(txt){ throw new Error("API " + res.status + ": " + txt.slice(0,200)); }); }
+    return res.json();
+  }).then(function(data){
+    var out = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+    if(!out) throw new Error("The API answered, but with no text.");
+    return out;
+  });
+}
+
+function sendMessage(){
+  var input=$("input");
+  var text=input.value.trim();
+  if(!text || busy) return;
+  var chat=currentChat(); if(!chat){ createChat(currentMode, true); chat=currentChat(); }
+  if(!chat.messages.length){ chat.title = text.length>42 ? text.slice(0,42)+"…" : text; }
+  chat.messages.push({role:"user", content:text});
+  chat.updatedAt=Date.now();
+  input.value=""; autoGrow(); renderMessages(); saveChats(); setBusy(true);
+  var typing=document.createElement("div"); typing.className="msg ai";
+  typing.innerHTML='<div class="who">Core-doh</div><div class="bubble typing"><i></i><i></i><i></i></div>';
+  $("messages").appendChild(typing); $("messages").scrollTop=$("messages").scrollHeight;
+
+  function finish(reply){
+    typing.remove(); setBusy(false);
+    chat.messages.push({role:"assistant", content:reply}); chat.updatedAt=Date.now();
+    renderMessages(); saveChats();
+  }
+  function fail(err){
+    typing.remove(); setBusy(false);
+    var msg = "That call didn't go through: " + err.message + "\n\nCheck the endpoint and key in Settings, or flip demo mode back on and keep working offline.";
+    chat.messages.push({role:"assistant", content:msg}); chat.updatedAt=Date.now();
+    renderMessages(); saveChats();
+  }
+  if(settings.demoMode || !settings.apiKey){
+    setTimeout(function(){
+      try{ finish(demoReply(text, chat.mode||"general")); }catch(e){ fail(e); }
+    }, 650);
+    return;
+  }
+  var apiMessages=[{role:"system", content:settings.systemPrompt}];
+  chat.messages.slice(-14).forEach(function(m){ apiMessages.push({role:m.role, content:m.content}); });
+  callApi(apiMessages).then(finish).catch(fail);
+}
+
+function autoGrow(){
+  var el=$("input"); el.style.height="auto"; el.style.height=Math.min(el.scrollHeight,180)+"px";
+}
+function showChat(){ $("chatView").style.display="flex"; $("scratchView").classList.remove("show"); }
+function showScratch(){ $("chatView").style.display="none"; $("scratchView").classList.add("show"); closeDrawer(); }
+function openDrawer(){ $("drawer").classList.add("open"); $("scrim").classList.add("show"); }
+function closeDrawer(){ $("drawer").classList.remove("open"); $("scrim").classList.remove("show"); }
+
+function openSettings(){
+  $("apiKey").value=settings.apiKey||"";
+  $("endpoint").value=settings.endpoint;
+  $("model").value=settings.model;
+  $("temperature").value=settings.temperature;
+  $("systemPrompt").value=settings.systemPrompt;
+  $("demoToggle").setAttribute("aria-checked", settings.demoMode ? "true" : "false");
+  $("settingsModal").classList.add("open");
+}
+function closeSettings(){ $("settingsModal").classList.remove("open"); }
+function saveSettingsFromForm(){
+  settings.apiKey=$("apiKey").value.trim();
+  settings.endpoint=$("endpoint").value.trim()||"https://api.openai.com/v1";
+  settings.model=$("model").value.trim()||"gpt-4o-mini";
+  var temp=parseFloat($("temperature").value); settings.temperature=isNaN(temp)?0.8:Math.max(0,Math.min(2,temp));
+  settings.systemPrompt=$("systemPrompt").value.trim()||DEFAULT_SYSTEM_PROMPT;
+  settings.demoMode=$("demoToggle").getAttribute("aria-checked")==="true";
+  saveSettings(); closeSettings(); toast("Settings saved");
+}
+
+function initScratch(){
+  var saved = localStorage.getItem(LS_SCRATCH)||"";
+  $("scratchText").value=saved;
+  if(saved) $("scratchSaved").textContent="Saved locally • "+saved.length+" characters";
+  var timer=null;
+  $("scratchText").addEventListener("input", function(){
+    $("scratchSaved").textContent="Saving…";
+    clearTimeout(timer);
+    timer=setTimeout(function(){
+      try{ localStorage.setItem(LS_SCRATCH, $("scratchText").value); }catch(e){}
+      $("scratchSaved").textContent="Saved locally • " + $("scratchText").value.length + " characters";
+    }, 400);
+  });
+  $("copyScratchBtn").addEventListener("click", function(){ copyText($("scratchText").value).then(function(){ toast("Notes copied"); }); });
+  $("clearScratchBtn").addEventListener("click", function(){ if(!confirm("Clear all Scratchpad notes?")) return; $("scratchText").value=""; try{ localStorage.removeItem(LS_SCRATCH); }catch(e){} $("scratchSaved").textContent="Cleared"; });
+  $("backToChatBtn").addEventListener("click", showChat);
+}
+
+function tryIconFile(){
+  var img=new Image();
+  img.onload=function(){
+    var hdr=$("headerIcon");
+    if(hdr){
+      var ns="http://www.w3.org/2000/svg";
+      var image=document.createElementNS(ns,"image");
+      image.setAttribute("href", ICON_FILE); image.setAttribute("x","0"); image.setAttribute("y","0"); image.setAttribute("width","512"); image.setAttribute("height","512");
+      hdr.appendChild(image);
+    }
+  };
+  img.src=ICON_FILE;
+}
+
+function init(){
+  loadSettings(); loadChats();
+  var chat=currentChat(); setMode(chat.mode||"general");
+  renderMessages(); renderHistory(); updateStatus(); initScratch(); tryIconFile();
+  $("sendBtn").addEventListener("click", sendMessage);
+  $("input").addEventListener("keydown", function(e){ if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); sendMessage(); } });
+  $("input").addEventListener("input", autoGrow);
+  $("newChatBtn").addEventListener("click", function(){ createChat(currentMode, false); renderMessages(); showChat(); closeDrawer(); $("input").focus(); });
+  $("settingsBtn").addEventListener("click", openSettings);
+  $("closeSettingsBtn").addEventListener("click", closeSettings);
+  $("saveSettingsBtn").addEventListener("click", saveSettingsFromForm);
+  $("settingsModal").addEventListener("click", function(e){ if(e.target===$("settingsModal")) closeSettings(); });
+  $("showKeyBtn").addEventListener("click", function(){ var f=$("apiKey"); var show=f.type==="password"; f.type=show?"text":"password"; $("showKeyBtn").textContent=show?"Hide":"Show"; });
+  $("demoToggle").addEventListener("click", function(){ var on=this.getAttribute("aria-checked")!=="true"; this.setAttribute("aria-checked", on?"true":"false"); });
+  $("resetPromptBtn").addEventListener("click", function(){ $("systemPrompt").value=DEFAULT_SYSTEM_PROMPT; toast("System prompt reset"); });
+  $("exportBtn").addEventListener("click", function(){
+    var c=currentChat(); if(!c) return;
+    var out="# "+(c.title||"Core-doh chat")+"\n\n";
+    c.messages.forEach(function(m){ out += (m.role==="user"?"Dustin: ":"Core-doh: ")+m.content+"\n\n"; });
+    copyText(out).then(function(){ toast("Chat copied — paste it anywhere to save it"); });
+  });
+  $("clearAllBtn").addEventListener("click", function(){
+    if(!confirm("Erase ALL chats, notes, and settings on this device?")) return;
+    try{ localStorage.removeItem(LS_CHATS); localStorage.removeItem(LS_SETTINGS); localStorage.removeItem(LS_SCRATCH); localStorage.removeItem(LS_CURRENT); }catch(e){}
+    location.reload();
+  });
+  $("menuBtn").addEventListener("click", openDrawer);
+  $("scrim").addEventListener("click", closeDrawer);
+  document.querySelectorAll(".wf").forEach(function(b){
+    b.addEventListener("click", function(){
+      var wf=b.getAttribute("data-wf");
+      if(wf==="scratch"){ showScratch(); return; }
+      setMode(wf);
+      var starter=WORKFLOWS[wf].starter;
+      showChat(); closeDrawer();
+      $("input").value=starter; autoGrow(); $("input").focus();
+      if(!currentChat().messages.length){
+        currentChat().messages.push({role:"assistant", content:"**"+WORKFLOWS[wf].label+"** — ready.\n\n"+WORKFLOWS[wf].pill+"\n\nGive me the starting idea and I'll build from there."});
+        renderMessages(); saveChats();
+      }
+    });
+  });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape"){ closeSettings(); closeDrawer(); } });
+}
+init();
+</script>
+</body>
+</html>
